@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { browser } from '$app/environment';
-    import { questions } from '$lib/data/questions';
+    import { questions } from '$lib/data/questionsOld';
     import Header from '$lib/components/Header.svelte';
     import Footer from '$lib/components/Footer.svelte';
     import ProgressBar from '$lib/components/ProgressBar.svelte';
@@ -18,6 +18,17 @@
     let totalAnswered = 0;
     let showResults = false;
   
+    function shuffleArray<T>(array: T[]): T[] {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+  
+    let shuffledQuestions = shuffleArray(questions);
+  
     function startTimer() {
       timer = setInterval(() => {
         timeElapsed += 1;
@@ -32,13 +43,15 @@
       selectedAnswer = index;
       showFeedback = true;
       totalAnswered++;
-      if (index === questions[currentQuestion].correct) {
+  
+      // Correct answer logic updated for shuffledQuestions
+      if (index === shuffledQuestions[currentQuestion].correct) {
         score++;
       }
     }
   
     function nextQuestion() {
-      if (currentQuestion < questions.length - 1) {
+      if (currentQuestion < shuffledQuestions.length - 1) {
         currentQuestion++;
         selectedAnswer = null;
         showFeedback = false;
@@ -60,6 +73,7 @@
       score = 0;
       totalAnswered = 0;
       showResults = false;
+      shuffledQuestions = shuffleArray(questions);
       clearInterval(timer);
       startTimer();
     }
@@ -103,7 +117,7 @@
   <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100">
     <Header />
     <ProgressBar {timeLimit} {timeElapsed} />
-    
+  
     <main class="flex-1 p-6">
       <div class="max-w-2xl mx-auto mb-6 flex justify-between items-center bg-white rounded-lg shadow-sm p-4">
         <div class="flex items-center gap-2">
@@ -121,7 +135,7 @@
       </div>
   
       <QuestionCard
-        question={questions[currentQuestion]}
+        question={shuffledQuestions[currentQuestion]}
         {selectedAnswer}
         {showFeedback}
         onAnswer={handleAnswer}
@@ -138,15 +152,15 @@
           </svg>
           Reset Quiz
         </button>
-        
+  
         {#if showFeedback}
           <button
             on:click={nextQuestion}
-            disabled={currentQuestion === questions.length - 1}
+            disabled={currentQuestion === shuffledQuestions.length - 1}
             class="px-5 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600
-              disabled:opacity-50 transition-all duration-200 font-medium flex items-center gap-2"
+            disabled:opacity-50 transition-all duration-200 font-medium flex items-center gap-2"
           >
-            {currentQuestion === questions.length - 1 ? 'Finish' : 'Next Question'}
+            {currentQuestion === shuffledQuestions.length - 1 ? 'Finish' : 'Next Question'}
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
             </svg>
@@ -159,7 +173,7 @@
         <kbd class="px-2 py-1 bg-slate-100 rounded text-xs mr-1">B</kbd>
         <kbd class="px-2 py-1 bg-slate-100 rounded text-xs mr-1">C</kbd>
         <kbd class="px-2 py-1 bg-slate-100 rounded text-xs mr-4">D</kbd>
-        to select an answer. 
+        to select an answer.
         <kbd class="px-2 py-1 bg-slate-100 rounded text-xs mr-1">Enter</kbd> or
         <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Space</kbd>
         for next question.
@@ -169,9 +183,9 @@
     <Footer {timeLimit} onTimeChange={handleTimeChange} />
   
     {#if showResults}
-      <Results 
+      <Results
         {score}
-        totalQuestions={questions.length}
+        totalQuestions={shuffledQuestions.length}
         {timeElapsed}
         onReset={resetQuiz}
       />
